@@ -1,0 +1,31 @@
+ARG DOTNET_SDK_IMAGE_TAG="5.0-alpine"
+FROM mcr.microsoft.com/dotnet/sdk:${DOTNET_SDK_IMAGE_TAG}
+ENV DOTNET_CLI_TELEMETRY_OPTOUT=1 \
+    DOTNET_CLI_UI_LANGUAGE=en-US \
+    DOTNET_SVCUTIL_TELEMETRY_OPTOUT=1 \
+    DOTNET_SKIP_FIRST_TIME_EXPERIENCE=1 \
+    DOTNET_NOLOGO=1 \
+    ACCEPT_EULA=Y \
+    POWERSHELL_TELEMETRY_OPTOUT=1 \
+    POWERSHELL_UPDATECHECK_OPTOUT=1 \
+    NUGET_CERT_REVOCATION_MODE=offline \
+    DOTNET_ROOT=/usr/share/dotnet \
+    PATH=~/.dotnet/tools:~/.dotnet/:/usr/share/dotnet:$PATH:
+
+COPY ./scripts/common-alpine.sh ./.lldbinit .
+RUN mkdir /nupkg  && chmod 777 /nupkg \
+    && mkdir /_symbols  && chmod 777 /_symbols \
+    && ./common-alpine.sh true none 0 0 true \
+    && rm ./common-alpine.sh \
+    && apk add --no-cache gcompat lldb  \
+    && dotnet tool install -g dotnet-sos \
+    && dotnet sos install \
+    && dotnet dev-certs https --trust \
+    && dotnet tool install -g dotnet-trace --version=*-* \
+    && dotnet tool install -g dotnet-gcdump --version=*-* \
+    && dotnet tool install -g dotnet-dump --version=*-* \
+    && dotnet tool install -g dotnet-symbol --version=*-* \
+    && dotnet tool install -g dotnet-counters --version=*-*
+
+ENV SHELL=/bin/zsh
+ENTRYPOINT ["/bin/zsh"]

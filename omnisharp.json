@@ -1,0 +1,22 @@
+{
+    "cake": {
+        "enabled": false
+    },
+    "script": {
+        "enabled": false
+    },
+    "FormattingOptions": {
+        "EnableEditorConfigSupport": true,
+        "NewLine": "\n",
+        "TabSize": 4
+    },
+    "msbuild": {
+        "enabled": true,
+        "EnablePackageAutoRestore": true,
+    },
+    "RoslynExtensionsOptions": {
+        "EnableAnalyzersSupport": true,
+        "EnableDecompilationSupport": true,
+        "DocumentAnalysisTimeoutMs": 30000
+    },
+}

@@ -1,0 +1,48 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "build",
+            "detail": "run dotnet build",
+            "command": "dotnet",
+            "type": "process",
+            "args": [
+                "build",
+                "-nologo",
+                "-maxCpuCount",
+                "-nodeReuse:false",
+                "-p:UseRazorBuildServer=false",
+                "-p:UseSharedCompilation=false",
+                "-p:EnableAnalyzer=false",
+                "-p:EnableNETAnalyzers=false",
+                "-p:GenerateFullPaths=true",
+                "/clp:ForceNoAlign"
+            ],
+            "runOptions": {
+                "instanceLimit": 1,
+                "reevaluateOnRerun": false
+            },
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "presentation": {
+                "reveal": "always",
+                "echo": false,
+                "focus": false,
+                "revealProblems": "never",
+                "showReuseMessage": false,
+                "clear": true,
+                "panel": "shared",
+                "group": "shared"
+            },
+            "problemMatcher": [],
+            "options": {
+                "cwd": "${workspaceFolder}/dump",
+                "env": {
+                    "MSBUILDDISABLENODEREUSE": "1"
+                }
+            }
+        },
+    ]
+}

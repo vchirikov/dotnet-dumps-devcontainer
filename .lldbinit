@@ -1,0 +1,7 @@
+logging disable
+setsymbolserver -directory /_symbols
+setsymbolserver -directory /_workspace/dump
+settings set target.x86-disassembly-flavor intel
+settings append target.exec-search-paths /_workspace
+settings append target.source-map /src  /_workspace/src
+settings append target.source-map /app  /_workspace/src

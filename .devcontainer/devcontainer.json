@@ -1,0 +1,49 @@
+{
+  "name": "dotnet dump devcontainer",
+  "runArgs": [
+    "--cap-add=SYS_PTRACE",
+    "--cap-add=SYS_ADMIN",
+    "--privileged",
+    "--security-opt",
+    "seccomp=unconfined"
+  ],
+  "build": {
+    // choose the correct one, use `cat /etc/os-release` to be sure about the OS
+    "dockerfile": "Dockerfile.alpine",
+    "context": "../",
+    "args": {
+      // DOTNET_SDK_IMAGE_TAG should be one from  https://hub.docker.com/_/microsoft-dotnet-sdk/
+      // you can get full tags here: https://mcr.microsoft.com/v2/dotnet/sdk/tags/list
+      "DOTNET_SDK_IMAGE_TAG": "5.0.400-alpine3.13"
+    }
+  },
+  "overrideCommand": true,
+  // Set *default* container specific settings.json values on container create.
+  "settings": {
+    "console": "integratedTerminal",
+    "omnisharp.useGlobalMono": "never",
+    "omnisharp.enableEditorConfigSupport": true,
+    "omnisharp.path": "latest",
+    "omnisharp.enableAsyncCompletion": true,
+    "omnisharp.enableDecompilationSupport": true,
+    "omnisharp.enableRoslynAnalyzers": true
+  },
+  // Add the IDs of extensions you want installed when the container is created.
+  "extensions": [
+    "ms-dotnettools.csharp",
+    "ms-dotnettools.dotnet-interactive-vscode",
+    // if you want to debug native code, you can use C++ debugger with lldb-mi
+    // "ms-vscode.cpptools"
+  ],
+  "remoteUser": "root",
+  "workspaceFolder": "/_workspace",
+  "postAttachCommand": "(cat /etc/os-release || cat /usr/lib/os-release) && echo -e \"\\e[1;34mWelcome to dotnet-dumps-devcontainer. Home url: \\e[0m\" && echo -e \"\\e[1;34mhttps://github.com/vchirikov/dotnet-dumps-devcontainer\\e[0m\" ; if [ -f \"/_workspace/dump/dump.coredump\" ]; then cd /_workspace/dump/ && dotnet symbol dump.coredump --debugging --host-only --overwrite ;  fi ;",
+  "mounts": [
+    "source=${localWorkspaceFolder}/_symbols,target=/_symbols,type=bind,consistency=cached",
+    "source=${localWorkspaceFolder},target=/_workspace,type=bind,consistency=cached",
+    "source=${localEnv:HOME}${localEnv:USERPROFILE}/.nuget/packages,target=/_nupkg,type=bind,consistency=cached",
+  ],
+  "containerEnv": {
+    "NUGET_FALLBACK_PACKAGES": "/_nupkg",
+  },
+}

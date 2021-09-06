@@ -1,0 +1,47 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "clrmd",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build",
+            "program": "${workspaceFolder}/dump/bin/Debug/clrmd",
+            "args": [],
+            "cwd": "${workspaceFolder}/dump",
+            "stopAtEntry": false,
+            "console": "internalConsole",
+            "logging": {
+                "moduleLoad": false
+            }
+        },
+        {
+            "name": "cppdbg-lldb",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "/_workspace/dump/dotnet",
+            "args": [],
+            "miDebuggerArgs": "--core",
+            "stopAtEntry": false,
+            "coreDumpPath": "${workspaceFolder}/dump/dump.coredump",
+            "cwd": "${workspaceFolder}/dump",
+            "environment": [],
+            "externalConsole": false,
+            "additionalSOLibSearchPath": "/_workspace/dump",
+            "miDebuggerPath": "/usr/bin/lldb-mi",
+            "MIMode": "lldb",
+            "setupCommands": [
+                {
+                    "description": "load sos",
+                    "text": "plugin load /root/.dotnet/sos/libsosplugin.so",
+                    "ignoreFailures": true
+                },
+                {
+                    "description": "setsymbolserver",
+                    "text": "setsymbolserver -ms",
+                    "ignoreFailures": true
+                }
+            ]
+        }
+    ]
+}

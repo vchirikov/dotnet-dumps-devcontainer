@@ -1,0 +1,48 @@
+#!markdown
+
+# Dump investigation helper
+
+Here you can use ClrMD too.
+
+#!markdown
+
+## Prepare
+
+Run this cell only once  
+Use `display()` to display some tables/html/strings/etc.
+
+#!csharp
+
+// *-* is better, but doesn't work well in notebooks
+// #r "nuget:Microsoft.Diagnostics.Runtime,*-*"
+// #r "nuget:DynaMD,*-*"
+#r "nuget: Microsoft.Diagnostics.Runtime, 2.0.226801"
+#r "nuget: DynaMD, 1.0.9.1"
+
+#nullable enable
+
+using System;
+using System.Linq;
+using Microsoft.Diagnostics.Runtime;
+using DynaMD;
+
+var dataTarget = DataTarget.LoadDump("dump.coredump");
+display($"Runtime version: {dataTarget.ClrVersions[0]}");
+var runtime = dataTarget.ClrVersions[0].CreateRuntime();
+
+#!markdown
+
+## Investigation
+
+#!csharp
+
+// You can use `runtime` now
+Console.WriteLine($"Clr thread count: {runtime.Threads.Length}");
+            
+var strings = runtime.Heap.EnumerateObjects()
+    .Where(x => !x.IsNull && x.Type?.Name == "System.String")
+    .Select(x => x.AsString(256))
+    .ToArray();
+
+Console.WriteLine("Found strings:");
+display(strings);
