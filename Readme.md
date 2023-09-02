@@ -6,7 +6,7 @@ The repo contains dotnet coredump investigation helpers. Supports alpine/debian/
 
 1. Open the repository folder with [Visual Studio Code](https://code.visualstudio.com/) ;
 2. Install workspace recommended extensions ;
-3. Place your dump to `dump/` with filename `dump.coredump` ;
+3. Place your dump to `dump/` with filename `dump.dmp` ;
 4. Edit [`.devcontainer/devcontainer.json`](.devcontainer/devcontainer.json) file
 
     * If your dump were collected from Debian-based (ubuntu/debian/etc) OS change the `dockerfile` property to `Dockerfile.debian` or to `Dockerfile.alpine` for dumps from Alpine.

@@ -1,15 +1,11 @@
-﻿using System;
-using System.Linq;
-using Microsoft.Diagnostics.Runtime;
-using DynaMD;
-
+﻿
 namespace clrmd
 {
     public static class Program
     {
         public static void Main(string[] args)
         {
-            using var dataTarget = DataTarget.LoadDump("dump.coredump");
+            using var dataTarget = DataTarget.LoadDump("dump.dmp");
             var version = dataTarget.ClrVersions[0];
             Console.WriteLine($"Version: {version}");
             using var runtime = version.CreateRuntime();

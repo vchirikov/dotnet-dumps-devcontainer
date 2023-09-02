@@ -4,6 +4,7 @@
 /dump/dotnet
 *.coredump
 *.dump
+*.dmp
 **/coverage.json
 *.code-workspace
 # Can contain personal info

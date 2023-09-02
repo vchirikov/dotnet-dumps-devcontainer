@@ -11,21 +11,21 @@
 
 set -e
 
+# Switch to bash right away
+if [ -z "${BASH_SOURCE}" ] && [ "${SWITCHED_TO_BASH}" != "true" ]; then
+    apk add --no-cache bash
+    export SWITCHED_TO_BASH=true
+    exec /bin/bash "$0" "$@"
+    exit $?
+fi
+
 INSTALL_ZSH=${1:-"true"}
 USERNAME=${2:-"automatic"}
 USER_UID=${3:-"automatic"}
 USER_GID=${4:-"automatic"}
 INSTALL_OH_MYS=${5:-"true"}
-SCRIPT_DIR="$(cd $(dirname "${BASH_SOURCE[0]}") && pwd)"
 MARKER_FILE="/usr/local/etc/vscode-dev-containers/common"
-
-# Switch to bash right away
-if [ "${SWITCHED_TO_BASH}" != "true" ]; then
-    apk add bash
-    export SWITCHED_TO_BASH=true
-    exec /bin/bash "$0" "$@"
-    exit $?
-fi
+SCRIPT_DIR="$(cd $(dirname "${BASH_SOURCE[0]}") && pwd)"
 
 if [ "$(id -u)" -ne 0 ]; then
     echo -e 'Script must be run as root. Use sudo, su, or add "USER root" to your Dockerfile before running this script.'
@@ -105,7 +105,7 @@ if [ "${PACKAGES_ALREADY_INSTALLED}" != "true" ]; then
     # Install man pages - package name varies between 3.12 and earlier versions
     if apk info man > /dev/null 2>&1; then
         apk add --no-cache man man-pages
-    else 
+    else
         apk add --no-cache mandoc man-pages
     fi
 
@@ -118,13 +118,15 @@ if [ "${PACKAGES_ALREADY_INSTALLED}" != "true" ]; then
 fi
 
 # Create or update a non-root user to match UID/GID.
+group_name="${USERNAME}"
 if id -u ${USERNAME} > /dev/null 2>&1; then
     # User exists, update if needed
-    if [ "${USER_GID}" != "automatic" ] && [ "$USER_GID" != "$(id -G $USERNAME)" ]; then 
-        groupmod --gid $USER_GID $USERNAME 
+    if [ "${USER_GID}" != "automatic" ] && [ "$USER_GID" != "$(id -g $USERNAME)" ]; then
+        group_name="$(id -gn $USERNAME)"
+        groupmod --gid $USER_GID ${group_name}
         usermod --gid $USER_GID $USERNAME
     fi
-    if [ "${USER_UID}" != "automatic" ] && [ "$USER_UID" != "$(id -u $USERNAME)" ]; then 
+    if [ "${USER_UID}" != "automatic" ] && [ "$USER_UID" != "$(id -u $USERNAME)" ]; then
         usermod --uid $USER_UID $USERNAME
     fi
 else
@@ -134,14 +136,14 @@ else
     else
         groupadd --gid $USER_GID $USERNAME
     fi
-    if [ "${USER_UID}" = "automatic" ]; then 
+    if [ "${USER_UID}" = "automatic" ]; then
         useradd -s /bin/bash --gid $USERNAME -m $USERNAME
     else
         useradd -s /bin/bash -K MAIL_DIR=/dev/null --uid $USER_UID --gid $USERNAME -m $USERNAME
     fi
 fi
 
-# Add add sudo support for non-root user
+# Add sudo support for non-root user
 if [ "${USERNAME}" != "root" ] && [ "${EXISTING_NON_ROOT_USER}" != "${USERNAME}" ]; then
     echo $USERNAME ALL=\(root\) NOPASSWD:ALL > /etc/sudoers.d/$USERNAME
     chmod 0440 /etc/sudoers.d/$USERNAME
@@ -149,7 +151,7 @@ if [ "${USERNAME}" != "root" ] && [ "${EXISTING_NON_ROOT_USER}" != "${USERNAME}"
 fi
 
 # ** Shell customization section **
-if [ "${USERNAME}" = "root" ]; then 
+if [ "${USERNAME}" = "root" ]; then
     user_rc_path="/root"
 else
     user_rc_path="/home/${USERNAME}"
@@ -176,9 +178,9 @@ fi
 # Set the default git editor if not already set
 if [ -z "$(git config --get core.editor)" ] && [ -z "${GIT_EDITOR}" ]; then
     if  [ "${TERM_PROGRAM}" = "vscode" ]; then
-        if [[ -n $(command -v code-insiders) &&  -z $(command -v code) ]]; then 
+        if [[ -n $(command -v code-insiders) &&  -z $(command -v code) ]]; then
             export GIT_EDITOR="code-insiders --wait"
-        else 
+        else
             export GIT_EDITOR="code --wait"
         fi
     fi
@@ -218,13 +220,15 @@ __bash_prompt() {
         && [ ! -z "${GITHUB_USER}" ] && echo -n "\[\033[0;32m\]@${GITHUB_USER} " || echo -n "\[\033[0;32m\]\u " \
         && [ "$XIT" -ne "0" ] && echo -n "\[\033[1;31m\]➜" || echo -n "\[\033[0m\]➜"`'
     local gitbranch='`\
-        export BRANCH=$(git symbolic-ref --short HEAD 2>/dev/null || git rev-parse --short HEAD 2>/dev/null); \
-        if [ "${BRANCH}" != "" ]; then \
-            echo -n "\[\033[0;36m\](\[\033[1;31m\]${BRANCH}" \
-            && if git ls-files --error-unmatch -m --directory --no-empty-directory -o --exclude-standard ":/*" > /dev/null 2>&1; then \
-                    echo -n " \[\033[1;33m\]✗"; \
-               fi \
-            && echo -n "\[\033[0;36m\]) "; \
+        if [ "$(git config --get codespaces-theme.hide-status 2>/dev/null)" != 1 ]; then \
+            export BRANCH=$(git symbolic-ref --short HEAD 2>/dev/null || git rev-parse --short HEAD 2>/dev/null); \
+            if [ "${BRANCH}" != "" ]; then \
+                echo -n "\[\033[0;36m\](\[\033[1;31m\]${BRANCH}" \
+                && if git ls-files --error-unmatch -m --directory --no-empty-directory -o --exclude-standard ":/*" > /dev/null 2>&1; then \
+                        echo -n " \[\033[1;33m\]✗"; \
+                fi \
+                && echo -n "\[\033[0;36m\]) "; \
+            fi; \
         fi`'
     local lightblue='\[\033[1;34m\]'
     local removecolor='\[\033[0m\]'
@@ -235,17 +239,21 @@ __bash_prompt
 
 EOF
 )"
+
 codespaces_zsh="$(cat \
 <<'EOF'
+# Codespaces zsh prompt theme
 __zsh_prompt() {
     local prompt_username
-    if [ ! -z "${GITHUB_USER}" ]; then 
+    if [ ! -z "${GITHUB_USER}" ]; then
         prompt_username="@${GITHUB_USER}"
     else
         prompt_username="%n"
     fi
-    PROMPT="%{$fg[green]%}${prompt_username} %(?:%{$reset_color%}➜ :%{$fg_bold[red]%}➜ )"
-    PROMPT+='%{$fg_bold[blue]%}%~%{$reset_color%} $(git_prompt_info)%{$fg[white]%}$ %{$reset_color%}'
+    PROMPT="%{$fg[green]%}${prompt_username} %(?:%{$reset_color%}➜ :%{$fg_bold[red]%}➜ )" # User/exit code arrow
+    PROMPT+='%{$fg_bold[blue]%}%(5~|%-1~/…/%3~|%4~)%{$reset_color%} ' # cwd
+    PROMPT+='$([ "$(git config --get codespaces-theme.hide-status 2>/dev/null)" != 1 ] && git_prompt_info)' # Git status
+    PROMPT+='%{$fg[white]%}$ %{$reset_color%}'
     unset -f __zsh_prompt
 }
 ZSH_THEME_GIT_PROMPT_PREFIX="%{$fg_bold[cyan]%}(%{$fg_bold[red]%}"
@@ -257,46 +265,14 @@ __zsh_prompt
 EOF
 )"
 
-# Add notice that Oh My Bash! has been removed from images and how to provide information on how to install manually
-omb_readme="$(cat \
-<<'EOF'
-"Oh My Bash!" has been removed from this image in favor of a simple shell prompt. If you 
-still wish to use it, remove "~/.oh-my-bash" and install it from: https://github.com/ohmybash/oh-my-bash
-You may also want to consider "Bash-it" as an alternative: https://github.com/bash-it/bash-it
-See here for infomation on adding it to your image or dotfiles: https://aka.ms/codespaces/omb-remove
-EOF
-)"
-omb_stub="$(cat \
-<<'EOF'
-#!/usr/bin/env bash
-if [ -t 1 ]; then
-    cat $HOME/.oh-my-bash/README.md
-fi
-EOF
-)"
-
 # Add RC snippet and custom bash prompt
 if [ "${RC_SNIPPET_ALREADY_ADDED}" != "true" ]; then
     echo -e "${rc_snippet}\n${codespaces_bash}" >> "${user_rc_path}/.bashrc"
     if [ "${USERNAME}" != "root" ]; then
         echo -e "${rc_snippet}\n${codespaces_bash}" >> "/root/.bashrc"
     fi
-    chown ${USERNAME}:${USERNAME} "${user_rc_path}/.bashrc"
+    chown ${USERNAME}:${group_name} "${user_rc_path}/.bashrc"
     RC_SNIPPET_ALREADY_ADDED="true"
-fi
-
-# Add stub for Oh My Bash!
-if [ ! -d "${user_rc_path}/.oh-my-bash}" ] && [ "${INSTALL_OH_MYS}" = "true" ]; then
-    mkdir -p "${user_rc_path}/.oh-my-bash" "/root/.oh-my-bash"
-    echo "${omb_readme}" >> "${user_rc_path}/.oh-my-bash/README.md"
-    echo "${omb_stub}" >> "${user_rc_path}/.oh-my-bash/oh-my-bash.sh"
-    chmod +x "${user_rc_path}/.oh-my-bash/oh-my-bash.sh"
-    if [ "${USERNAME}" != "root" ]; then
-        echo "${omb_readme}" >> "/root/.oh-my-bash/README.md"
-        echo "${omb_stub}" >> "/root/.oh-my-bash/oh-my-bash.sh"
-        chmod +x "/root/.oh-my-bash/oh-my-bash.sh"
-    fi
-    chown -R "${USERNAME}:${USERNAME}" "${user_rc_path}/.oh-my-bash"
 fi
 
 # Optionally install and configure zsh and Oh My Zsh!
@@ -334,7 +310,7 @@ if [ "${INSTALL_ZSH}" = "true" ]; then
         # Copy to non-root user if one is specified
         if [ "${USERNAME}" != "root" ]; then
             cp -rf "${user_rc_file}" "${oh_my_install_dir}" /root
-            chown -R ${USERNAME}:${USERNAME} "${user_rc_path}"
+            chown -R ${USERNAME}:${group_name} "${user_rc_path}"
         fi
     fi
 fi

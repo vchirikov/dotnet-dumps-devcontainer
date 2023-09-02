@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net5.0</TargetFramework>
+    <TargetFramework>net6.0</TargetFramework>
     <OutputType>Exe</OutputType>
     <IsPackable>False</IsPackable>
     <IsPublishable>False</IsPublishable>
@@ -21,6 +21,23 @@
     <SuppressNETCoreSdkPreviewMessage>true</SuppressNETCoreSdkPreviewMessage>
   </PropertyGroup>
 
+  <ItemGroup>
+    <Using Include="System" />
+    <Using Include="System.Linq" />
+    <Using Include="System.Collections" />
+    <Using Include="System.Collections.Concurrent" />
+    <Using Include="System.Collections.Immutable" />
+    <Using Include="System.Diagnostics" />
+    <Using Include="System.Globalization" />
+    <Using Include="System.FormattableString" Static="True" />
+    <Using Include="System.Runtime.CompilerServices" />
+    <Using Include="System.Runtime.InteropServices" />
+    <Using Include="System.Runtime.Serialization" />
+    <Using Include="System.Threading" />
+    <Using Include="Microsoft.Diagnostics.Runtime" />
+    <Using Include="DynaMD" />
+
+  </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.Diagnostics.Runtime" Version="*-*" />
     <PackageReference Include="DynaMD" Version="*-*" />
